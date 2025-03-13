@@ -28,11 +28,11 @@ class LinkedHashMapLibrary implements PokeMapa {
 }
 
 class PokeMapaFactory {
-    public static PokeMapa getPokeMapa(String type) {
-        return switch (type.toLowerCase()) {
-            case "hashmap" -> new HashMapLibrary();
-            case "treemap" -> new TreeMapLibrary();
-            case "linkedhashmap" -> new LinkedHashMapLibrary();
+    public static PokeMapa getPokeMapa(String tipo) {
+        return switch (tipo.toLowerCase()) {
+            case "1" -> new HashMapLibrary();
+            case "2" -> new TreeMapLibrary();
+            case "3" -> new LinkedHashMapLibrary();
             default -> throw new IllegalArgumentException("Tipo de mapa no válido");
         };
     }
