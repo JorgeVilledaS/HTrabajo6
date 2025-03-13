@@ -23,6 +23,15 @@ class Coleccion {
         }
     }
 
+    public void showPokesByType() {
+    List<Poke> ordenados = new ArrayList<>(Pokes);
+    ordenados.sort(Comparator.comparing(Poke::gettipo1));
+
+    for (Poke poke : ordenados) {
+    System.out.println(poke.getnombre() + " - " + poke.gettipo1());
+    }
+    }
+
     public void showPokes() {
         for (Poke Poke : Pokes) {
             System.out.println(Poke);
