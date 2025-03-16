@@ -3,112 +3,111 @@ package HTrabajo6;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class Controlador {
-    // Atributos
-    private Map<String, Poke> mapaPokemon; // Mapa principal con todos los pokemon
-    private List<Poke> coleccionUsuario; // Colección de pokemon del usuario
+    private Map<String, Poke> mapaPokemon;
+    private List<Poke> coleccionUsuario;
 
-    // Constructor
     public Controlador() {
-        // Inicializamos la colección del usuario por defecto como ArrayList
         coleccionUsuario = new ArrayList<>();
     }
 
-    /**
-     * Inicializa el mapa según la opción seleccionada por el usuario
-     * @param opcionMapa 1 para HashMap, 2 para TreeMap, 3 para LinkedHashMap
-     */
     public void inicializarMapa(int opcionMapa) {
-        switch (opcionMapa) {
-            case 1:
-                mapaPokemon = new HashMap<>();
-                break;
-            case 2:
-                mapaPokemon = new TreeMap<>();
-                break;
-            case 3:
-                mapaPokemon = new LinkedHashMap<>();
-                break;
-            default:
-                mapaPokemon = new HashMap<>(); // Valor por defecto
-                break;
+        switch (opcionMapa) { 
+            case 1 -> mapaPokemon = new HashMap<>();
+            case 2 -> mapaPokemon = new TreeMap<>();
+            case 3 -> mapaPokemon = new LinkedHashMap<>();
+            default -> mapaPokemon = new HashMap<>();
         }
     }
 
-    /**
-     * Lee los datos de pokemon desde un archivo y los almacena en el mapa
-     * @param rutaArchivo ruta al archivo CSV con los datos
-     * @return número de pokemon cargados o -1 si hubo error
-     */
-    public int leerArchivo(String rutaArchivo) {
-        int contador = 0;
-        
-        try (BufferedReader br = new BufferedReader(new FileReader(rutaArchivo))) {
-            String linea;
-            boolean primeraLinea = true;
+    public int cargarDatosPokemon() {
+    int contador = 0;
+    // Definimos el nombre del archivo directamente (sin ruta)
+    String nombreArchivo = "pokemon_data_pokeapis.csv";
+    
+    try {
+        // Intenta cargar como archivo desde el directorio actual
+        BufferedReader br = new BufferedReader(new FileReader(nombreArchivo));
+        String line = br.readLine(); // Leer encabezados si existen
             
-            while ((linea = br.readLine()) != null) {
-                // Saltar encabezados
-                if (primeraLinea) {
-                    primeraLinea = false;
-                    continue;
-                }
-                
-                // Procesar datos y crear objeto Poke
-                Poke pokemon = crearPokemonDesdeCSV(linea);
-                if (pokemon != null) {
-                    mapaPokemon.put(pokemon.getnombre(), pokemon);
-                    contador++;
-                }
+        while ((line = br.readLine()) != null) {
+            Poke pokemon = procesarDatosPokemon(line);
+            if (pokemon != null) {
+                mapaPokemon.put(pokemon.getnombre(), pokemon);
+                contador++;
             }
+        }
+        br.close();
+        System.out.println("Se cargaron " + contador + " Pokémon del archivo " + nombreArchivo);
+        return contador;
+    } catch (IOException e) {
+        System.err.println("Error al leer el archivo: " + e.getMessage());
+        System.err.println("Ruta actual: " + System.getProperty("user.dir"));
+        return -1;
+    }
+    }
+
+    private Poke procesarDatosPokemon(String datos) {
+        try {
+            String[] campos = parseCsvLine(datos);
+            if (campos.length < 10) {
+                System.err.println("Registro incompleto: " + datos);
+                return null;
+            }
+
+            String nombre = campos[0].trim();
+            int noPokedex = Integer.parseInt(campos[1].trim());
+            String tipo1 = campos[2].trim();
+            String tipo2 = campos[3].trim().isEmpty() ? null : campos[3].trim();
+            String clasificacion = campos[4].trim();
+            double altura = Double.parseDouble(campos[5].trim());
+            double peso = Double.parseDouble(campos[6].trim());
             
-            return contador;
-        } catch (IOException e) {
-            System.err.println("Error al leer el archivo: " + e.getMessage());
-            return -1;
+            List<String> habilidades = new ArrayList<>(Arrays.asList(campos[7].replace("\"", "").split(", ")));
+            int gen = Integer.parseInt(campos[8].trim());
+            boolean esLegendario = campos[9].trim().equalsIgnoreCase("Yes");
+
+            return new Poke(nombre, noPokedex, tipo1, tipo2, clasificacion, altura, peso, habilidades, gen, esLegendario);
+        } catch (Exception e) {
+            System.err.println("Error al procesar: " + datos + " - " + e.getMessage());
+            return null;
         }
     }
     
     /**
-     * Crea un objeto Poke a partir de una línea CSV
-     * @param linea Línea del archivo CSV
-     * @return Objeto Poke o null si hay error
+     * Parsea una línea de texto CSV en un array de valores.
+     * Maneja correctamente campos entrecomillados y comas dentro de los campos.
+     * 
+     * @param line Línea de texto CSV a parsear
+     * @return Array con los valores extraídos de la línea
      */
-    private Poke crearPokemonDesdeCSV(String linea) {
-        try {
-            String[] datos = linea.split(",");
-            // Validar que haya suficientes campos
-            if (datos.length < 10) {
-                return null;
+    private String[] parseCsvLine(String line) {
+        if (line == null) return new String[0];
+        
+        // Manejar campos entrecomillados y comas dentro de los campos
+        boolean inQuotes = false;
+        StringBuilder field = new StringBuilder();
+        List<String> fields = new ArrayList<>();
+        
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ';' && !inQuotes) { // Cambiado a ';' para coincidir con el formato original
+                fields.add(field.toString());
+                field = new StringBuilder();
+            } else {
+                field.append(c);
             }
-            
-            // Extraer datos según el formato del CSV
-            String nombre = datos[0].trim();
-            int noPokedex = Integer.parseInt(datos[1].trim());
-            String tipo1 = datos[2].trim();
-            String tipo2 = datos[3].trim().equals("") ? null : datos[3].trim();
-            String clasificacion = datos[4].trim();
-            double altura = Double.parseDouble(datos[5].trim());
-            double peso = Double.parseDouble(datos[6].trim());
-            
-            // Procesar habilidades
-            List<String> habilidades = new ArrayList<>();
-            if (datos.length > 7 && !datos[7].trim().isEmpty()) {
-                String[] habilidadesArray = datos[7].trim().split(";");
-                habilidades.addAll(Arrays.asList(habilidadesArray));
-            }
-            
-            int gen = Integer.parseInt(datos[8].trim());
-            boolean esLegendario = Boolean.parseBoolean(datos[9].trim());
-            
-            return new Poke(nombre, noPokedex, tipo1, tipo2, clasificacion, 
-                    altura, peso, habilidades, gen, esLegendario);
-        } catch (Exception e) {
-            System.err.println("Error al procesar línea: " + linea + " - " + e.getMessage());
-            return null;
         }
+        
+        fields.add(field.toString());
+        return fields.toArray(new String[0]);
     }
     
     /**
@@ -117,14 +116,12 @@ public class Controlador {
      * @return true si se agregó, false si hubo un error
      */
     public boolean agregarPokemonAUsuario(String nombreAgregar) {
-        // Verificar si existe en el mapa principal
         Poke pokemon = mapaPokemon.get(nombreAgregar);
         if (pokemon == null) {
             System.out.println("Error: El Pokémon " + nombreAgregar + " no existe en la base de datos.");
             return false;
         }
         
-        // Agregar a la colección del usuario
         coleccionUsuario.add(pokemon);
         System.out.println("Pokémon " + nombreAgregar + " agregado a tu colección.");
         return true;
@@ -151,11 +148,9 @@ public class Controlador {
     public List<String> mostrarColeccionUsuarioOrdenadaPorTipo() {
         List<String> resultado = new ArrayList<>();
         
-        // Ordenar la colección por tipo1
         List<Poke> pokemonOrdenados = new ArrayList<>(coleccionUsuario);
         pokemonOrdenados.sort(Comparator.comparing(Poke::gettipo1));
         
-        // Convertir a lista de strings para mostrar
         for (Poke pokemon : pokemonOrdenados) {
             resultado.add(pokemon.getnombre() + " - " + pokemon.gettipo1());
         }
@@ -170,11 +165,9 @@ public class Controlador {
     public List<String> mostrarTodosOrdenadosPorTipo() {
         List<String> resultado = new ArrayList<>();
         
-        // Convertir el mapa a lista para ordenar
         List<Poke> pokemonOrdenados = new ArrayList<>(mapaPokemon.values());
         pokemonOrdenados.sort(Comparator.comparing(Poke::gettipo1));
         
-        // Convertir a lista de strings para mostrar
         for (Poke pokemon : pokemonOrdenados) {
             resultado.add(pokemon.getnombre() + " - " + pokemon.gettipo1());
         }

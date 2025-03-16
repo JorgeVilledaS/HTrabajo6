@@ -18,10 +18,15 @@ public class Main {
         // Inicializar el Map usando el Factory
         controlador.inicializarMapa(opcionMapa);
 
-        // Cargar datos desde el archivo CSV
-        System.out.print("Ingresa la ruta del archivo CSV");
-        String rutaArchivo = scanner.nextLine();
-        controlador.leerArchivo(rutaArchivo);
+        // Cargar datos desde el archivo CSV automáticamente
+        System.out.println("Cargando datos de Pokémon desde el archivo predefinido...");
+        int pokemonCargados = controlador.cargarDatosPokemon();
+        
+        if (pokemonCargados <= 0) {
+            System.out.println("Error al cargar los datos. El programa se cerrará.");
+            scanner.close();
+            return;
+        }
 
         // Menú de opciones
         boolean salir = false;
