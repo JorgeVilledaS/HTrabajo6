@@ -1,20 +1,36 @@
-package HTrabajo6;
+/**
+ * Universidad del Valle de Guatemala
+ * Departamento de Ciencia de la Computación
+ * Programación Orientada a Objetos
+ * 
+ * Autor: Jorge Andrés Villeda Solís - 24932 
+ * Fecha: 16/03/2025 
+ * Descripción: Clase encargada de gestionar la colección de Pokémon del usuario,
+ * así como la carga de datos desde archivos y las operaciones sobre el mapa de Pokémon.
+ */
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.*;
 
 public class Controlador {
     private Map<String, Poke> mapaPokemon;
     private List<Poke> coleccionUsuario;
 
+    /**
+     * Constructor de la clase Controlador.
+    * Inicializa la colección del usuario como una lista vacía.
+    */
     public Controlador() {
         coleccionUsuario = new ArrayList<>();
     }
 
+    /**
+     * Inicializa el mapa que contendrá los Pokémon, según la opción seleccionada.
+    * 
+    * @param opcionMapa 1 para HashMap, 2 para TreeMap, 3 para LinkedHashMap. Cualquier otro valor usa HashMap por defecto.
+    */
     public void inicializarMapa(int opcionMapa) {
         switch (opcionMapa) { 
             case 1 -> mapaPokemon = new HashMap<>();
@@ -24,33 +40,42 @@ public class Controlador {
         }
     }
 
+    /**
+     * Carga los datos de los Pokémon desde un archivo CSV.
+    * 
+    * @return El número de Pokémon cargados correctamente, o -1 si ocurrió un error al leer el archivo.
+    */
     public int cargarDatosPokemon() {
-    int contador = 0;
-    // Definimos el nombre del archivo directamente (sin ruta)
-    String nombreArchivo = "pokemon_data_pokeapis.csv";
-    
-    try {
-        // Intenta cargar como archivo desde el directorio actual
-        BufferedReader br = new BufferedReader(new FileReader(nombreArchivo));
-        String line = br.readLine(); // Leer encabezados si existen
-            
-        while ((line = br.readLine()) != null) {
-            Poke pokemon = procesarDatosPokemon(line);
-            if (pokemon != null) {
-                mapaPokemon.put(pokemon.getnombre(), pokemon);
-                contador++;
+        int contador = 0;
+        String nombreArchivo = "pokemon_data_pokeapis.csv";
+        
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(nombreArchivo));
+            String line = br.readLine(); // Leer encabezados si existen
+                
+            while ((line = br.readLine()) != null) {
+                Poke pokemon = procesarDatosPokemon(line);
+                if (pokemon != null) {
+                    mapaPokemon.put(pokemon.getnombre(), pokemon);
+                    contador++;
+                }
             }
+            br.close();
+            System.out.println("Se cargaron " + contador + " Pokémon del archivo " + nombreArchivo);
+            return contador;
+        } catch (IOException e) {
+            System.err.println("Error al leer el archivo: " + e.getMessage());
+            System.err.println("Ruta actual: " + System.getProperty("user.dir"));
+            return -1;
         }
-        br.close();
-        System.out.println("Se cargaron " + contador + " Pokémon del archivo " + nombreArchivo);
-        return contador;
-    } catch (IOException e) {
-        System.err.println("Error al leer el archivo: " + e.getMessage());
-        System.err.println("Ruta actual: " + System.getProperty("user.dir"));
-        return -1;
-    }
     }
 
+    /**
+     * Procesa una línea del archivo CSV para crear un objeto Poke.
+    * 
+    * @param datos Línea de texto con los datos del Pokémon.
+    * @return Objeto Poke si se procesó correctamente, o null si hubo error.
+    */
     private Poke procesarDatosPokemon(String datos) {
         try {
             String[] campos = parseCsvLine(datos);
@@ -77,18 +102,17 @@ public class Controlador {
             return null;
         }
     }
-    
+
     /**
      * Parsea una línea de texto CSV en un array de valores.
-     * Maneja correctamente campos entrecomillados y comas dentro de los campos.
-     * 
-     * @param line Línea de texto CSV a parsear
-     * @return Array con los valores extraídos de la línea
-     */
+    * Maneja correctamente campos entrecomillados y comas dentro de los campos.
+    * 
+    * @param line Línea de texto CSV a parsear.
+    * @return Array con los valores extraídos de la línea.
+    */
     private String[] parseCsvLine(String line) {
         if (line == null) return new String[0];
         
-        // Manejar campos entrecomillados y comas dentro de los campos
         boolean inQuotes = false;
         StringBuilder field = new StringBuilder();
         List<String> fields = new ArrayList<>();
@@ -109,12 +133,13 @@ public class Controlador {
         fields.add(field.toString());
         return fields.toArray(new String[0]);
     }
-    
+
     /**
-     * Agrega un pokemon a la colección del usuario
-     * @param nombreAgregar Nombre del pokemon a agregar
-     * @return true si se agregó, false si hubo un error
-     */
+     * Agrega un Pokémon a la colección del usuario.
+    * 
+    * @param nombreAgregar Nombre del Pokémon a agregar.
+    * @return true si el Pokémon fue agregado correctamente, false si no existe en la base de datos.
+    */
     public boolean agregarPokemonAUsuario(String nombreAgregar) {
         Poke pokemon = mapaPokemon.get(nombreAgregar);
         if (pokemon == null) {
@@ -126,25 +151,26 @@ public class Controlador {
         System.out.println("Pokémon " + nombreAgregar + " agregado a tu colección.");
         return true;
     }
-    
+
     /**
-     * Muestra los datos de un pokemon específico
-     * @param nombreBuscar Nombre del pokemon a buscar
-     * @return String con la información o mensaje de error
-     */
+     * Muestra los datos de un Pokémon específico.
+    * 
+    * @param nombreBuscar Nombre del Pokémon a buscar.
+    * @return String con la información del Pokémon o un mensaje si no existe.
+    */
     public String mostrarDatosPokemon(String nombreBuscar) {
         Poke pokemon = mapaPokemon.get(nombreBuscar);
         if (pokemon == null) {
             return "El Pokémon " + nombreBuscar + " no existe en la base de datos.";
         }
-        
         return pokemon.toString();
     }
-    
+
     /**
-     * Muestra los pokemon del usuario ordenados por tipo1
-     * @return Lista de strings con información de pokemon ordenados por tipo1
-     */
+     * Muestra la colección de Pokémon del usuario ordenada por el primer tipo (tipo1).
+    * 
+    * @return Lista de strings con la información de los Pokémon ordenados por tipo1.
+    */
     public List<String> mostrarColeccionUsuarioOrdenadaPorTipo() {
         List<String> resultado = new ArrayList<>();
         
@@ -157,11 +183,12 @@ public class Controlador {
         
         return resultado;
     }
-    
+
     /**
-     * Muestra todos los pokemon ordenados por tipo1
-     * @return Lista de strings con información de pokemon ordenados por tipo1
-     */
+     * Muestra todos los Pokémon en la base de datos ordenados por el primer tipo (tipo1).
+    * 
+    * @return Lista de strings con la información de los Pokémon ordenados por tipo1.
+    */
     public List<String> mostrarTodosOrdenadosPorTipo() {
         List<String> resultado = new ArrayList<>();
         
@@ -174,12 +201,13 @@ public class Controlador {
         
         return resultado;
     }
-    
+
     /**
-     * Busca pokemon que tienen una habilidad específica
-     * @param habilidad Habilidad a buscar
-     * @return Lista de nombres de pokemon que tienen la habilidad
-     */
+     * Busca Pokémon que tienen una habilidad específica.
+    * 
+    * @param habilidad Habilidad a buscar.
+    * @return Lista de nombres de Pokémon que poseen la habilidad indicada.
+    */
     public List<String> buscarPokemonPorHabilidad(String habilidad) {
         List<String> resultado = new ArrayList<>();
         
